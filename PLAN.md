@@ -221,6 +221,7 @@ create table exercises (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references profiles(id) on delete set null, -- null + is_builtin=false = owner deleted their account
   is_builtin boolean not null default false,
+  variation_of uuid references exercises(id) on delete set null, -- e.g. "Tempo Goblet Squat" of "Goblet Squat"
   movement_pattern text,         -- squat, lunge, hinge, push_horizontal, push_vertical, pull_horizontal, pull_vertical, carry, core, isolation, cardio
   name text not null,
   description text,
@@ -367,6 +368,13 @@ create table session_sets (
   rpe numeric(3,1),                   -- optional rating of effort, 1–10
   completed boolean not null default true,
   notes text
+);
+
+create table favorite_exercises (
+  user_id uuid not null references profiles(id) on delete cascade,
+  exercise_id uuid not null references exercises(id) on delete cascade,
+  created_at timestamptz default now(),
+  primary key (user_id, exercise_id)
 );
 
 create table body_metrics (
@@ -537,6 +545,8 @@ Build these in order. Each one ends deployable, with its acceptance criteria met
 **M3 – Exercise library**
 
 - Browse, search and filter built-in and custom exercises. Trainers and individual users can create, edit and archive their own.
+- Creating starts from the name: similar existing exercises are suggested first, with options to favourite one or create a variation of it.
+- Variations (`exercises.variation_of`) and per-user favourites (`favorite_exercises`, readable and writable only by their owner).
 - ✅ A trainer creates a custom exercise that their client can see and another trainer can't.
 
 **M4 – Invites and client list**

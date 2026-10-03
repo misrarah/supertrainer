@@ -22,3 +22,8 @@ One line per decision not covered by PLAN.md, with the reason.
 - 2026-10-03 — `save_plan` is SECURITY DEFINER with explicit checks, because activating a plan must archive a previous plan the caller may not own.
 - 2026-10-03 — A client with a trainer may still create their own plans; activating one archives the trainer's active plan. Revisit if trainers object.
 - 2026-10-03 — CI runs the RLS tests and checks generated types against a fresh local Supabase before deploying.
+- 2026-10-03 — Route guarding is one pure function (`src/app/route-decision.ts`, unit-tested) used by a single guard around every route.
+- 2026-10-03 — The page a signed-out visitor was heading to is kept in localStorage, so it survives the Google redirect and magic links opened in a new tab; invite links skip onboarding because accepting sets the role.
+- 2026-10-03 — Account deletion asks the user to type DELETE, since it can't be undone.
+- 2026-10-03 — Local Supabase allows 100 emails an hour (default 2) so magic-link testing isn't blocked; production limits are set in the dashboard.
+- 2026-10-03 — Playwright added in M2 (planned for M9) to smoke-test sign-in locally through Mailpit.

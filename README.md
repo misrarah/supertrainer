@@ -28,6 +28,8 @@ npm run db:test    # runs the RLS tests in supabase/tests
 npm run db:types   # regenerates src/lib/database.types.ts
 ```
 
+Signing in locally: Google isn't configured for local Supabase, so use the email link. Emails are caught by Mailpit at <http://127.0.0.1:54324>; open the link from there in the same browser.
+
 Checks (the same ones CI runs):
 
 ```sh

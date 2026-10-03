@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { ChipGroup } from '@/components/chip-group'
@@ -35,7 +35,8 @@ import {
   PATTERN_LABELS,
   TRACKING_LABELS,
 } from './labels'
-import { useSaveExercise } from './use-exercises'
+import { ExerciseNameStep } from './exercise-name-step'
+import { useExercises, useSaveExercise } from './use-exercises'
 
 const optional = <T extends [string, ...string[]]>(values: T) =>
   z.union([z.enum(values), z.literal('')]).transform((v) => (v === '' ? null : v))
@@ -60,6 +61,7 @@ const schema = z.object({
       z.literal(''),
     ])
     .transform((v) => v || null),
+  variation_of: z.string().nullable(),
 })
 type FormInput = z.input<typeof schema>
 
@@ -74,6 +76,7 @@ const EMPTY: FormInput = {
   difficulty: '',
   caution_tags: [],
   video_url: '',
+  variation_of: null,
 }
 
 function toFormInput(exercise: Exercise): FormInput {
@@ -88,12 +91,21 @@ function toFormInput(exercise: Exercise): FormInput {
     difficulty: exercise.difficulty ?? '',
     caution_tags: exercise.caution_tags,
     video_url: exercise.video_url ?? '',
+    variation_of: exercise.variation_of,
   }
 }
 
+/** A variation starts as a copy of its parent's details, under a new name. */
+function variationInput(parent: Exercise, name: string): FormInput {
+  return { ...toFormInput(parent), name, video_url: '', variation_of: parent.id }
+}
+
+export type ExerciseFormTarget =
+  { mode: 'new' } | { mode: 'variation'; parent: Exercise } | { mode: 'edit'; exercise: Exercise }
+
 type Props = {
-  /** null: closed; 'new': create; an exercise: edit it. */
-  target: Exercise | 'new' | null
+  /** null when closed. */
+  target: ExerciseFormTarget | null
   userId: string
   onClose: () => void
   onSaved?: (exercise: Exercise) => void
@@ -101,21 +113,40 @@ type Props = {
 
 export function ExerciseFormSheet({ target, userId, onClose, onSaved }: Props) {
   const save = useSaveExercise(userId)
+  const exercises = useExercises()
   const form = useForm<FormInput, unknown, ExerciseInput>({
     resolver: zodResolver(schema),
     defaultValues: EMPTY,
   })
+  // New exercises start by looking for an existing match.
+  const [step, setStep] = useState<'name' | 'details'>('details')
+  const [draftName, setDraftName] = useState('')
+  const [openedFor, setOpenedFor] = useState(target)
+
+  // Start afresh each time the sheet opens for a new target.
+  if (target !== openedFor) {
+    setOpenedFor(target)
+    setDraftName('')
+    setStep(target?.mode === 'new' ? 'name' : 'details')
+  }
 
   useEffect(() => {
-    if (target) form.reset(target === 'new' ? EMPTY : toFormInput(target))
+    if (!target) return
+    if (target.mode === 'new') form.reset(EMPTY)
+    if (target.mode === 'variation') form.reset(variationInput(target.parent, ''))
+    if (target.mode === 'edit') form.reset(toFormInput(target.exercise))
   }, [target, form])
+
+  const isEdit = target?.mode === 'edit'
+  const variationOf = useWatch({ control: form.control, name: 'variation_of' })
+  const parent = variationOf ? exercises.data?.find((e) => e.id === variationOf) : undefined
 
   const submit = form.handleSubmit((input) =>
     save.mutate(
-      { id: target && target !== 'new' ? target.id : null, input },
+      { id: target?.mode === 'edit' ? target.exercise.id : null, input },
       {
         onSuccess: (saved) => {
-          toast.success(target === 'new' ? 'Exercise created' : 'Exercise saved')
+          toast.success(isEdit ? 'Exercise saved' : 'Exercise created')
           onSaved?.(saved)
           onClose()
         },
@@ -138,18 +169,66 @@ export function ExerciseFormSheet({ target, userId, onClose, onSaved }: Props) {
     <Sheet open={target !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>{target === 'new' ? 'New exercise' : 'Edit exercise'}</SheetTitle>
+          <SheetTitle>
+            {isEdit ? 'Edit exercise' : variationOf ? 'New variation' : 'New exercise'}
+          </SheetTitle>
           <SheetDescription>
-            {target === 'new'
-              ? 'Your own exercises are visible to you and, if you’re a trainer, your clients.'
-              : 'Changes apply everywhere this exercise is used.'}
+            {isEdit
+              ? 'Changes apply everywhere this exercise is used.'
+              : 'Your own exercises are visible to you and, if you’re a trainer, your clients.'}
           </SheetDescription>
         </SheetHeader>
 
-        <form id="exercise-form" noValidate onSubmit={submit} className="space-y-5 px-4">
+        {step === 'name' && (
+          <ExerciseNameStep
+            name={draftName}
+            onNameChange={setDraftName}
+            exercises={exercises.data ?? []}
+            userId={userId}
+            onCreateNew={() => {
+              form.reset({ ...EMPTY, name: draftName.trim() })
+              setStep('details')
+            }}
+            onCreateVariation={(chosen) => {
+              const name = draftName.trim() === chosen.name ? '' : draftName.trim()
+              form.reset(variationInput(chosen, name))
+              setStep('details')
+            }}
+          />
+        )}
+
+        <form
+          id="exercise-form"
+          noValidate
+          onSubmit={submit}
+          hidden={step !== 'details'}
+          className="space-y-5 px-4"
+        >
+          {variationOf && (
+            <div className="bg-muted flex items-center justify-between gap-3 rounded-lg p-3 text-sm">
+              <span>
+                Variation of <strong>{parent?.name ?? 'another exercise'}</strong>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9"
+                onClick={() => form.setValue('variation_of', null, { shouldDirty: true })}
+              >
+                Unlink
+              </Button>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
-            <Input id="name" className="h-11" {...invalid('name')} {...form.register('name')} />
+            <Input
+              id="name"
+              placeholder={parent ? `e.g. Paused ${parent.name}` : undefined}
+              className="h-11"
+              {...invalid('name')}
+              {...form.register('name')}
+            />
             {fieldError('name')}
           </div>
 
@@ -283,7 +362,7 @@ export function ExerciseFormSheet({ target, userId, onClose, onSaved }: Props) {
           </div>
         </form>
 
-        <SheetFooter className="flex-row gap-2">
+        <SheetFooter className="flex-row gap-2" hidden={step !== 'details'}>
           <Button
             type="submit"
             form="exercise-form"

@@ -10,6 +10,7 @@ const ME = 'me'
 
 function exercise(overrides: Partial<FilterableExercise> & { name: string }): FilterableExercise {
   return {
+    id: overrides.name,
     description: null,
     owner_id: null,
     is_builtin: true,
@@ -117,6 +118,19 @@ describe('filterExercises', () => {
       'Trainer Squat',
     ])
     expect(filterExercises(library, { ...EMPTY_FILTERS, source: 'builtin' }, ME)).toHaveLength(5)
+  })
+})
+
+describe('favourites', () => {
+  it('shows only favourites when asked', () => {
+    const favorites = new Set(['Push-up', 'Old Squat'])
+    expect(
+      names(filterExercises(library, { ...EMPTY_FILTERS, favoritesOnly: true }, ME, favorites)),
+    ).toEqual(['Push-up'])
+  })
+
+  it('ignores favourites when the toggle is off', () => {
+    expect(filterExercises(library, EMPTY_FILTERS, ME, new Set(['Push-up']))).toHaveLength(7)
   })
 })
 

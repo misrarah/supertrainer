@@ -65,6 +65,7 @@ export type CautionTag = (typeof CAUTION_TAGS)[number]
 
 /** The fields filtering needs; the data layer's Exercise type satisfies it. */
 export type FilterableExercise = {
+  id: string
   name: string
   description: string | null
   owner_id: string | null
@@ -88,6 +89,7 @@ export type ExerciseFilters = {
   difficulties: Difficulty[]
   source: ExerciseSource
   showArchived: boolean
+  favoritesOnly: boolean
 }
 
 export const EMPTY_FILTERS: ExerciseFilters = {
@@ -98,6 +100,7 @@ export const EMPTY_FILTERS: ExerciseFilters = {
   difficulties: [],
   source: 'all',
   showArchived: false,
+  favoritesOnly: false,
 }
 
 const DIFFICULTY_ORDER: Record<Difficulty, number> = { beginner: 0, intermediate: 1, advanced: 2 }
@@ -137,11 +140,13 @@ export function filterExercises<T extends FilterableExercise>(
   exercises: readonly T[],
   filters: ExerciseFilters,
   userId: string,
+  favoriteIds: ReadonlySet<string> = new Set(),
 ): T[] {
   return exercises
     .filter(
       (e) =>
         (filters.showArchived || !e.archived) &&
+        (!filters.favoritesOnly || favoriteIds.has(e.id)) &&
         matchesSearch(e, filters.search) &&
         (!filters.pattern || e.movement_pattern === filters.pattern) &&
         (!filters.muscle || e.primary_muscle === filters.muscle) &&
@@ -168,6 +173,7 @@ const difficultyRank = (difficulty: Difficulty | null) =>
 const equipmentRank = (equipment: readonly Equipment[]) =>
   Math.min(EQUIPMENT.length, ...equipment.map((item) => EQUIPMENT.indexOf(item)))
 
+/** Filters set in the filter panel (search and the favourites toggle sit outside it). */
 export function activeFilterCount(filters: ExerciseFilters): number {
   return (
     (filters.pattern ? 1 : 0) +

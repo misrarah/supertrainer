@@ -21,18 +21,36 @@ import {
   PATTERN_LABELS,
   TRACKING_LABELS,
 } from './labels'
-import { useSetExerciseArchived } from './use-exercises'
+import { FavoriteButton } from './favorite-button'
+import { useExercises, useSetExerciseArchived } from './use-exercises'
 
 type Props = {
   exercise: Exercise | null
   userId: string
   onClose: () => void
   onEdit: (exercise: Exercise) => void
+  onCreateVariation: (parent: Exercise) => void
+  /** Open another exercise (a parent or variation) in this sheet. */
+  onSelect: (exercise: Exercise) => void
 }
 
-export function ExerciseDetailSheet({ exercise, userId, onClose, onEdit }: Props) {
+export function ExerciseDetailSheet({
+  exercise,
+  userId,
+  onClose,
+  onEdit,
+  onCreateVariation,
+  onSelect,
+}: Props) {
   const archive = useSetExerciseArchived()
+  const all = useExercises()
   const isMine = exercise?.owner_id === userId
+  const parent = exercise?.variation_of
+    ? all.data?.find((e) => e.id === exercise.variation_of)
+    : undefined
+  const variations = exercise
+    ? (all.data ?? []).filter((e) => e.variation_of === exercise.id && !e.archived)
+    : []
 
   const toggleArchived = (target: Exercise) =>
     archive.mutate(
@@ -57,6 +75,26 @@ export function ExerciseDetailSheet({ exercise, userId, onClose, onEdit }: Props
             </SheetHeader>
 
             <div className="space-y-5 px-4">
+              <FavoriteButton
+                exerciseId={exercise.id}
+                exerciseName={exercise.name}
+                userId={userId}
+                withLabel
+              />
+
+              {parent && (
+                <p className="text-sm">
+                  Variation of{' '}
+                  <button
+                    type="button"
+                    className="font-medium underline underline-offset-2"
+                    onClick={() => onSelect(parent)}
+                  >
+                    {parent.name}
+                  </button>
+                </p>
+              )}
+
               {exercise.description && <p className="leading-relaxed">{exercise.description}</p>}
 
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
@@ -91,6 +129,25 @@ export function ExerciseDetailSheet({ exercise, userId, onClose, onEdit }: Props
                 </div>
               )}
 
+              {variations.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Variations</p>
+                  <ul className="divide-y rounded-lg border">
+                    {variations.map((variation) => (
+                      <li key={variation.id}>
+                        <button
+                          type="button"
+                          className="hover:bg-muted flex min-h-11 w-full items-center px-3 text-left text-sm"
+                          onClick={() => onSelect(variation)}
+                        >
+                          {variation.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {exercise.video_url && (
                 <a
                   href={exercise.video_url}
@@ -103,21 +160,30 @@ export function ExerciseDetailSheet({ exercise, userId, onClose, onEdit }: Props
               )}
             </div>
 
-            {isMine && (
-              <SheetFooter className="flex-row gap-2">
-                <Button className="h-11 flex-1" onClick={() => onEdit(exercise)}>
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 flex-1"
-                  disabled={archive.isPending}
-                  onClick={() => toggleArchived(exercise)}
-                >
-                  {exercise.archived ? 'Restore' : 'Archive'}
-                </Button>
-              </SheetFooter>
-            )}
+            <SheetFooter className="gap-2">
+              {isMine && (
+                <div className="flex gap-2">
+                  <Button className="h-11 flex-1" onClick={() => onEdit(exercise)}>
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 flex-1"
+                    disabled={archive.isPending}
+                    onClick={() => toggleArchived(exercise)}
+                  >
+                    {exercise.archived ? 'Restore' : 'Archive'}
+                  </Button>
+                </div>
+              )}
+              <Button
+                variant={isMine ? 'ghost' : 'outline'}
+                className="h-11"
+                onClick={() => onCreateVariation(exercise)}
+              >
+                Create a variation
+              </Button>
+            </SheetFooter>
           </>
         )}
       </SheetContent>

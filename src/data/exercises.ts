@@ -50,6 +50,7 @@ export type ExerciseInput = Pick<
   | 'difficulty'
   | 'caution_tags'
   | 'video_url'
+  | 'variation_of'
 >
 
 const oneOf = <T extends string>(allowed: readonly T[], value: string | null): T | null =>

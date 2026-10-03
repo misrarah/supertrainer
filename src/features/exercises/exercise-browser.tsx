@@ -1,4 +1,4 @@
-import { SlidersHorizontalIcon } from 'lucide-react'
+import { SlidersHorizontalIcon, StarIcon } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,9 @@ import {
   type MovementPattern,
 } from '@/domain/exercises'
 import { ExerciseFiltersPanel } from './exercise-filters'
+import { FavoriteButton } from './favorite-button'
 import { DIFFICULTY_LABELS, EQUIPMENT_LABELS, MUSCLE_LABELS, PATTERN_LABELS } from './labels'
+import { useFavoriteExerciseIds } from './use-exercises'
 
 type Props = {
   exercises: Exercise[]
@@ -26,9 +28,10 @@ type Props = {
 export function ExerciseBrowser({ exercises, userId, filters, onFiltersChange, onSelect }: Props) {
   const [showFilters, setShowFilters] = useState(false)
   const filtersId = useId()
+  const favorites = useFavoriteExerciseIds()
   const visible = useMemo(
-    () => filterExercises(exercises, filters, userId),
-    [exercises, filters, userId],
+    () => filterExercises(exercises, filters, userId, favorites.data),
+    [exercises, filters, userId, favorites.data],
   )
   const groups = useMemo(() => groupByPattern(visible), [visible])
   const filterCount = activeFilterCount(filters)
@@ -56,6 +59,19 @@ export function ExerciseBrowser({ exercises, userId, filters, onFiltersChange, o
         </Button>
       </div>
 
+      <Button
+        variant="outline"
+        className="h-10"
+        aria-pressed={filters.favoritesOnly}
+        onClick={() => onFiltersChange({ ...filters, favoritesOnly: !filters.favoritesOnly })}
+      >
+        <StarIcon
+          aria-hidden="true"
+          className={filters.favoritesOnly ? 'fill-amber-400 text-amber-500' : undefined}
+        />
+        Favourites only
+      </Button>
+
       <div id={filtersId} hidden={!showFilters}>
         <ExerciseFiltersPanel filters={filters} onChange={onFiltersChange} />
       </div>
@@ -66,7 +82,9 @@ export function ExerciseBrowser({ exercises, userId, filters, onFiltersChange, o
 
       {visible.length === 0 && (
         <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center">
-          No exercises match. Try clearing some filters.
+          {filters.favoritesOnly && (favorites.data?.size ?? 0) === 0
+            ? 'No favourites yet. Tap the star on an exercise to add it here.'
+            : 'No exercises match. Try clearing some filters.'}
         </p>
       )}
 
@@ -77,11 +95,11 @@ export function ExerciseBrowser({ exercises, userId, filters, onFiltersChange, o
           </h2>
           <ul className="divide-y rounded-lg border">
             {items.map((exercise) => (
-              <li key={exercise.id}>
+              <li key={exercise.id} className="flex items-center pr-1">
                 <button
                   type="button"
                   onClick={() => onSelect(exercise)}
-                  className="hover:bg-muted focus-visible:bg-muted flex min-h-14 w-full flex-col items-start gap-1 px-3 py-2.5 text-left focus-visible:outline-none"
+                  className="hover:bg-muted focus-visible:bg-muted flex min-h-14 min-w-0 flex-1 flex-col items-start gap-1 px-3 py-2.5 text-left focus-visible:outline-none"
                 >
                   <span className="flex flex-wrap items-center gap-2 font-medium">
                     {exercise.name}
@@ -102,6 +120,11 @@ export function ExerciseBrowser({ exercises, userId, filters, onFiltersChange, o
                       .join(' · ')}
                   </span>
                 </button>
+                <FavoriteButton
+                  exerciseId={exercise.id}
+                  exerciseName={exercise.name}
+                  userId={userId}
+                />
               </li>
             ))}
           </ul>

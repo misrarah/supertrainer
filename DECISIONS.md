@@ -34,3 +34,6 @@ One line per decision not covered by PLAN.md, with the reason.
 - 2026-10-03 — Individual users get the library at `/u/exercises` (PLAN only listed `/t/exercises`), since they can create their own exercises.
 - 2026-10-03 — Read policies on `exercises` and `plans` check the row's own columns: helpers that re-query by id can't see a row being inserted, which broke `insert … returning`. RLS tests now insert as real users.
 - 2026-10-03 — On phones, navigation is a bottom tab bar; four links don't fit in a 375px header.
+- 2026-10-03 — "New exercise" starts with the name and suggests similar existing exercises (gym shorthand like db/kb/RDL/OHP, plurals, spacing and typos), so people favourite or vary an existing exercise instead of creating near-duplicates (user request). Matching runs in the browser over the already-loaded library.
+- 2026-10-03 — Variations are linked with `exercises.variation_of`; a variation starts as a copy of the parent's details. You can only vary an exercise you can see.
+- 2026-10-03 — Favourites are per user (`favorite_exercises`), private, and limited to exercises the user can see.

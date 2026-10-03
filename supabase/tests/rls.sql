@@ -132,6 +132,37 @@ select lives_ok(
   'any signed-in user can send feedback');
 select is((select count(*)::int from public.feedback), 0, 'nobody can read feedback through the API');
 
+-- Favourites and variations, still as C1
+select lives_ok(
+  $$ insert into public.favorite_exercises (user_id, exercise_id)
+     values ('00000000-0000-0000-0000-0000000000c1', (select id from public.exercises where name = 'Goblet Squat')) $$,
+  'a user can favourite a built-in exercise');
+select lives_ok(
+  $$ insert into public.favorite_exercises (user_id, exercise_id)
+     values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000e1') $$,
+  'a client can favourite their trainer''s exercise');
+select throws_ok(
+  $$ insert into public.favorite_exercises (user_id, exercise_id)
+     values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000e2') $$,
+  '42501', null,
+  'a user cannot favourite an exercise they cannot see');
+select throws_ok(
+  $$ insert into public.favorite_exercises (user_id, exercise_id)
+     values ('00000000-0000-0000-0000-0000000000c2', (select id from public.exercises where name = 'Goblet Squat')) $$,
+  '42501', null,
+  'a user cannot add favourites for someone else');
+select lives_ok(
+  $$ insert into public.exercises (owner_id, name, tracking_type, variation_of)
+     values ('00000000-0000-0000-0000-0000000000c1', 'Tempo Goblet Squat', 'weight_reps',
+             (select id from public.exercises where name = 'Goblet Squat')) returning id $$,
+  'a user can create a variation of a built-in exercise');
+select throws_ok(
+  $$ insert into public.exercises (owner_id, name, tracking_type, variation_of)
+     values ('00000000-0000-0000-0000-0000000000c1', 'Sneaky Variation', 'weight_reps',
+             '00000000-0000-0000-0000-0000000000e2') $$,
+  'P0001', 'exercise_not_found',
+  'a user cannot create a variation of an exercise they cannot see');
+
 -- ---------------------------------------------------------------------------
 -- as T2
 -- ---------------------------------------------------------------------------
@@ -141,6 +172,8 @@ set local role authenticated;
 
 select is((select count(*)::int from public.exercises where id = '00000000-0000-0000-0000-0000000000e1'), 0,
   'another trainer cannot see a trainer''s custom exercise');
+select is((select count(*)::int from public.favorite_exercises), 0,
+  'users cannot see other people''s favourites');
 select is((select count(*)::int from public.plans where id = '00000000-0000-0000-0000-0000000000b1'), 0,
   'another trainer cannot see a trainer''s plan');
 

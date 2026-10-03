@@ -8,7 +8,7 @@ import { errorMessage } from '@/data/errors'
 import { EMPTY_FILTERS, type ExerciseFilters } from '@/domain/exercises'
 import { ExerciseBrowser } from './exercise-browser'
 import { ExerciseDetailSheet } from './exercise-detail-sheet'
-import { ExerciseFormSheet } from './exercise-form-sheet'
+import { type ExerciseFormTarget, ExerciseFormSheet } from './exercise-form-sheet'
 import { useExercises } from './use-exercises'
 
 export function ExerciseLibraryPage() {
@@ -16,13 +16,13 @@ export function ExerciseLibraryPage() {
   const exercises = useExercises()
   const [filters, setFilters] = useState<ExerciseFilters>(EMPTY_FILTERS)
   const [selected, setSelected] = useState<Exercise | null>(null)
-  const [editing, setEditing] = useState<Exercise | 'new' | null>(null)
+  const [editing, setEditing] = useState<ExerciseFormTarget | null>(null)
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Exercises</h1>
-        <Button className="h-11" onClick={() => setEditing('new')}>
+        <Button className="h-11" onClick={() => setEditing({ mode: 'new' })}>
           <PlusIcon aria-hidden="true" />
           New exercise
         </Button>
@@ -49,12 +49,22 @@ export function ExerciseLibraryPage() {
         exercise={selected}
         userId={userId}
         onClose={() => setSelected(null)}
+        onSelect={setSelected}
         onEdit={(exercise) => {
           setSelected(null)
-          setEditing(exercise)
+          setEditing({ mode: 'edit', exercise })
+        }}
+        onCreateVariation={(parent) => {
+          setSelected(null)
+          setEditing({ mode: 'variation', parent })
         }}
       />
-      <ExerciseFormSheet target={editing} userId={userId} onClose={() => setEditing(null)} />
+      <ExerciseFormSheet
+        target={editing}
+        userId={userId}
+        onClose={() => setEditing(null)}
+        onSaved={setSelected}
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { HashRouter, Route, Routes } from 'react-router'
 import { LoginPage } from '@/features/auth/login-page'
+import { ExerciseLibraryPage } from '@/features/exercises/exercise-library-page'
 import { UserHomePage } from '@/features/logging/user-home-page'
 import { OnboardingPage } from '@/features/onboarding/onboarding-page'
 import { PrivacyPage } from '@/features/privacy/privacy-page'
@@ -22,7 +23,9 @@ export function AppRouter() {
             {/* The guard always redirects from / to the right home page. */}
             <Route path="/" element={null} />
             <Route path="/t" element={<TrainerHomePage />} />
+            <Route path="/t/exercises" element={<ExerciseLibraryPage />} />
             <Route path="/u" element={<UserHomePage />} />
+            <Route path="/u/exercises" element={<ExerciseLibraryPage />} />
             <Route path="/trainers" element={<TrainersPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

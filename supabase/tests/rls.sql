@@ -107,8 +107,24 @@ select throws_ok(
 
 select is((select count(*)::int from public.exercises where id = '00000000-0000-0000-0000-0000000000e1'), 1,
   'a client can see their trainer''s custom exercise');
-select is((select count(*)::int from public.exercises where is_builtin), 45,
+select cmp_ok((select count(*)::int from public.exercises where is_builtin), '>=', 100,
   'everyone signed in can see the built-in exercises');
+
+-- The app inserts and reads the saved row back in one request (insert ... returning).
+select lives_ok(
+  $$ insert into public.exercises (owner_id, name, tracking_type)
+     values ('00000000-0000-0000-0000-0000000000c1', 'My Own Move', 'reps_only') returning id $$,
+  'a user can create an exercise and read it back in the same request');
+select throws_ok(
+  $$ insert into public.exercises (owner_id, name, tracking_type)
+     values ('00000000-0000-0000-0000-0000000000a1', 'Forged', 'reps_only') $$,
+  '42501', null,
+  'a user cannot create an exercise owned by someone else');
+select lives_ok(
+  $$ insert into public.plans (author_id, client_id, name)
+     values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c1', 'Own plan')
+     returning id $$,
+  'a user can create a plan and read it back in the same request');
 
 select lives_ok(
   $$ insert into public.feedback (user_id, role, route, message)

@@ -152,6 +152,7 @@ All routes are hash routes.
 | `/t/plans`                                | trainer   | template plans list                                            |
 | `/t/plans/:planId`                        | trainer   | plan builder                                                   |
 | `/t/exercises`                            | trainer   | exercise library: browse, create, edit own exercises           |
+| `/u/exercises`                            | user      | the same library, for creating and editing their own exercises |
 | `/t/questions`                            | trainer   | manage custom intake questions                                 |
 | `/t/clients/:clientId/session/:sessionId` | trainer   | log a session on the client's behalf                           |
 | `/u`                                      | user      | home: today's workout, recent sessions                         |
@@ -220,6 +221,7 @@ create table exercises (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references profiles(id) on delete set null, -- null + is_builtin=false = owner deleted their account
   is_builtin boolean not null default false,
+  movement_pattern text,         -- squat, lunge, hinge, push_horizontal, push_vertical, pull_horizontal, pull_vertical, carry, core, isolation, cardio
   name text not null,
   description text,
   primary_muscle text,          -- chest, back, shoulders, biceps, triceps, quads, hamstrings, glutes, calves, core, full_body, cardio
@@ -503,55 +505,10 @@ Supabase pauses free projects after 7 days with no activity. To prevent that, ad
 ### 9.4 Seed data (`supabase/seed.sql`)
 
 - The default intake questions from section 6.4.
-- About 45 built-in exercises (`is_builtin = true`, `owner_id` null):
-
-| Exercise                       | Primary muscle | Equipment            | Tracking          | Difficulty   | Caution tags          |
-| ------------------------------ | -------------- | -------------------- | ----------------- | ------------ | --------------------- |
-| Barbell Back Squat             | quads          | barbell              | weight_reps       | intermediate | knees, lower_back     |
-| Goblet Squat                   | quads          | dumbbell, kettlebell | weight_reps       | beginner     | knees                 |
-| Leg Press                      | quads          | machine              | weight_reps       | beginner     | knees                 |
-| Bodyweight Squat               | quads          | bodyweight           | bodyweight_reps   | beginner     | knees                 |
-| Walking Lunge                  | quads          | dumbbell, bodyweight | weight_reps       | beginner     | knees                 |
-| Bulgarian Split Squat          | quads          | dumbbell, bench      | weight_reps       | intermediate | knees                 |
-| Leg Extension                  | quads          | machine              | weight_reps       | beginner     | knees                 |
-| Romanian Deadlift              | hamstrings     | barbell, dumbbell    | weight_reps       | intermediate | lower_back            |
-| Conventional Deadlift          | full_body      | barbell              | weight_reps       | advanced     | lower_back            |
-| Lying Leg Curl                 | hamstrings     | machine              | weight_reps       | beginner     |                       |
-| Hip Thrust                     | glutes         | barbell, bench       | weight_reps       | intermediate |                       |
-| Glute Bridge                   | glutes         | bodyweight           | bodyweight_reps   | beginner     |                       |
-| Standing Calf Raise            | calves         | machine, dumbbell    | weight_reps       | beginner     |                       |
-| Barbell Bench Press            | chest          | barbell, bench       | weight_reps       | intermediate | shoulders             |
-| Dumbbell Bench Press           | chest          | dumbbell, bench      | weight_reps       | beginner     | shoulders             |
-| Incline Dumbbell Press         | chest          | dumbbell, bench      | weight_reps       | beginner     | shoulders             |
-| Push-up                        | chest          | bodyweight           | bodyweight_reps   | beginner     | wrists, shoulders     |
-| Knee Push-up                   | chest          | bodyweight           | bodyweight_reps   | beginner     | wrists                |
-| Chest Fly (Cable)              | chest          | cable                | weight_reps       | beginner     | shoulders             |
-| Pull-up                        | back           | pull_up_bar          | bodyweight_reps   | advanced     | shoulders             |
-| Assisted Pull-up               | back           | machine, band        | assisted_reps     | beginner     | shoulders             |
-| Lat Pulldown                   | back           | cable, machine       | weight_reps       | beginner     |                       |
-| Seated Cable Row               | back           | cable                | weight_reps       | beginner     |                       |
-| One-arm Dumbbell Row           | back           | dumbbell, bench      | weight_reps       | beginner     |                       |
-| Barbell Row                    | back           | barbell              | weight_reps       | intermediate | lower_back            |
-| Band Pull-apart                | shoulders      | band                 | reps_only         | beginner     |                       |
-| Overhead Press                 | shoulders      | barbell              | weight_reps       | intermediate | shoulders, lower_back |
-| Seated Dumbbell Shoulder Press | shoulders      | dumbbell, bench      | weight_reps       | beginner     | shoulders             |
-| Lateral Raise                  | shoulders      | dumbbell, cable      | weight_reps       | beginner     | shoulders             |
-| Face Pull                      | shoulders      | cable, band          | weight_reps       | beginner     |                       |
-| Dumbbell Curl                  | biceps         | dumbbell             | weight_reps       | beginner     |                       |
-| Hammer Curl                    | biceps         | dumbbell             | weight_reps       | beginner     |                       |
-| Triceps Pushdown               | triceps        | cable                | weight_reps       | beginner     |                       |
-| Overhead Triceps Extension     | triceps        | dumbbell, cable      | weight_reps       | beginner     | shoulders             |
-| Bench Dip                      | triceps        | bench, bodyweight    | bodyweight_reps   | intermediate | shoulders, wrists     |
-| Plank                          | core           | bodyweight           | duration          | beginner     | lower_back            |
-| Side Plank                     | core           | bodyweight           | duration          | beginner     | shoulders             |
-| Dead Bug                       | core           | bodyweight           | reps_only         | beginner     |                       |
-| Hanging Knee Raise             | core           | pull_up_bar          | bodyweight_reps   | intermediate | shoulders             |
-| Pallof Press                   | core           | cable, band          | weight_reps       | beginner     |                       |
-| Kettlebell Swing               | full_body      | kettlebell           | weight_reps       | intermediate | lower_back            |
-| Farmer's Carry                 | full_body      | dumbbell, kettlebell | distance_duration | beginner     |                       |
-| Treadmill                      | cardio         | cardio_machine       | distance_duration | beginner     | knees                 |
-| Rowing Machine                 | cardio         | cardio_machine       | distance_duration | beginner     | lower_back            |
-| Exercise Bike                  | cardio         | cardio_machine       | distance_duration | beginner     |                       |
+- About 150 built-in exercises (`is_builtin = true`, `owner_id` null), in `supabase/seed.sql`, which is the source of truth. Every movement pattern has variations across equipment and ability, so the library works for limited mobility, home workouts with little or no kit, and full gyms:
+  - **Movement patterns:** squat, lunge, hinge, horizontal push, vertical push, horizontal pull, vertical pull, carry, core, isolation, cardio.
+  - **Progressions within each pattern:** chair or wall-supported regressions (sit-to-stand, wall push-up, seated band row, seated march) → bodyweight → bands → dumbbells and kettlebells → pull-up bar → barbell, cable and machine.
+  - Includes every exercise from the original 45-exercise list.
 
 ---
 

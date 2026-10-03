@@ -44,13 +44,13 @@ isOneToOne: false
                   ]
                 },"exercises": {
                   Row: {
-                    "archived": boolean,"caution_tags": (string)[],"created_at": string,"description": string | null,"difficulty": string | null,"equipment": (string)[],"id": string,"is_builtin": boolean,"name": string,"owner_id": string | null,"primary_muscle": string | null,"secondary_muscles": (string)[],"tracking_type": string,"video_url": string | null
+                    "archived": boolean,"caution_tags": (string)[],"created_at": string,"description": string | null,"difficulty": string | null,"equipment": (string)[],"id": string,"is_builtin": boolean,"movement_pattern": string | null,"name": string,"owner_id": string | null,"primary_muscle": string | null,"secondary_muscles": (string)[],"tracking_type": string,"video_url": string | null
                   }
                   Insert: {
-                    "archived"?: boolean,"caution_tags"?: (string)[],"created_at"?: string,"description"?: string | null,"difficulty"?: string | null,"equipment"?: (string)[],"id"?: string,"is_builtin"?: boolean,"name": string,"owner_id"?: string | null,"primary_muscle"?: string | null,"secondary_muscles"?: (string)[],"tracking_type": string,"video_url"?: string | null
+                    "archived"?: boolean,"caution_tags"?: (string)[],"created_at"?: string,"description"?: string | null,"difficulty"?: string | null,"equipment"?: (string)[],"id"?: string,"is_builtin"?: boolean,"movement_pattern"?: string | null,"name": string,"owner_id"?: string | null,"primary_muscle"?: string | null,"secondary_muscles"?: (string)[],"tracking_type": string,"video_url"?: string | null
                   }
                   Update: {
-                    "archived"?: boolean,"caution_tags"?: (string)[],"created_at"?: string,"description"?: string | null,"difficulty"?: string | null,"equipment"?: (string)[],"id"?: string,"is_builtin"?: boolean,"name"?: string,"owner_id"?: string | null,"primary_muscle"?: string | null,"secondary_muscles"?: (string)[],"tracking_type"?: string,"video_url"?: string | null
+                    "archived"?: boolean,"caution_tags"?: (string)[],"created_at"?: string,"description"?: string | null,"difficulty"?: string | null,"equipment"?: (string)[],"id"?: string,"is_builtin"?: boolean,"movement_pattern"?: string | null,"name"?: string,"owner_id"?: string | null,"primary_muscle"?: string | null,"secondary_muscles"?: (string)[],"tracking_type"?: string,"video_url"?: string | null
                   }
                   Relationships: [
                     {
@@ -354,6 +354,9 @@ isOneToOne: false
                            },
 "end_client":
 { Args: { "p_allow_retain"?: boolean,"p_client": string }; Returns: undefined
+                           },
+"exercise_in_visible_session":
+{ Args: { "p_exercise": string }; Returns: boolean
                            },
 "generate_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string

@@ -27,3 +27,10 @@ One line per decision not covered by PLAN.md, with the reason.
 - 2026-10-03 — Account deletion asks the user to type DELETE, since it can't be undone.
 - 2026-10-03 — Local Supabase allows 100 emails an hour (default 2) so magic-link testing isn't blocked; production limits are set in the dashboard.
 - 2026-10-03 — Playwright added in M2 (planned for M9) to smoke-test sign-in locally through Mailpit.
+- 2026-10-03 — Exercises get a `movement_pattern` column and the seed grows to ~150 exercises, so every movement has variations from chair/wall-supported through bodyweight, bands, dumbbells, kettlebells and a pull-up bar to gym kit (user request: accessible for varying abilities and home workouts).
+- 2026-10-03 — The library sorts each movement by difficulty, then the least kit needed, so lists read as a progression.
+- 2026-10-03 — The equipment filter matches exercises that use *any* selected item: `equipment` lists alternatives (dumbbell or kettlebell) as well as combinations (dumbbell and bench), and "any" is the forgiving reading.
+- 2026-10-03 — Band exercises are logged as reps only; the band used goes in `equipment_used` (e.g. "green band").
+- 2026-10-03 — Individual users get the library at `/u/exercises` (PLAN only listed `/t/exercises`), since they can create their own exercises.
+- 2026-10-03 — Read policies on `exercises` and `plans` check the row's own columns: helpers that re-query by id can't see a row being inserted, which broke `insert … returning`. RLS tests now insert as real users.
+- 2026-10-03 — On phones, navigation is a bottom tab bar; four links don't fit in a 375px header.

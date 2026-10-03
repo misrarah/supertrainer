@@ -623,7 +623,7 @@ Build these in order. Each one ends deployable, with its acceptance criteria met
 - Design for phones first (375px wide) and check at desktop width.
 - SQL goes in migrations, never in the dashboard. Each migration is small and named.
 - Keep secrets out of the repo. Only the `VITE_` variables reach the client.
-- Use conventional commits, one milestone per pull request.
+- Use conventional commits. Push each milestone straight to `main` (no pull requests).
 - Use the latest stable version of every library that works with the rest of the stack; don't pin to old majors.
 - Show null authors, owners and loggers as "Deleted account".
 - Record any decision not covered here in `DECISIONS.md` with a single line explaining why.

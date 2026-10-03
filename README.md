@@ -7,7 +7,7 @@ Stack: React + TypeScript + Vite, Tailwind + shadcn/ui, TanStack Query, Supabase
 ## Prerequisites
 
 - **Node.js 22.12+** (`node -v`).
-- **Docker** (Docker Desktop or OrbStack), needed from M1 onwards to run Supabase locally. Install it from <https://www.docker.com/products/docker-desktop/> and start it once.
+- **Docker** (Docker Desktop or OrbStack), needed from M1 onwards to run Supabase locally. Install it from <https://www.docker.com/products/docker-desktop/> and start it once. If `docker` isn't found in your terminal, add `export PATH="$HOME/.docker/bin:$PATH"` to `~/.zshrc`.
 - The **Supabase CLI** is a dev dependency, so there's nothing to install globally: use `npx supabase …` or the `npm run db:*` scripts.
 
 ## Local development
@@ -22,6 +22,7 @@ For a local database (needs Docker):
 
 ```sh
 npm run db:start   # starts local Supabase and prints its URL and anon key -> put them in .env.local
+npx supabase status # shows the URL and keys again later
 npm run db:reset   # re-applies supabase/migrations and supabase/seed.sql
 npm run db:test    # runs the RLS tests in supabase/tests
 npm run db:types   # regenerates src/lib/database.types.ts

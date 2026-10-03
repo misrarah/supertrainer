@@ -38,9 +38,24 @@ jobs:
         with:
           path: dist
 
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Applies supabase/migrations and seed.sql to a fresh local database
+      - run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
+      - run: npx supabase test db
+      # Fails if the committed types are out of date with the migrations
+      - run: npx supabase gen types typescript --local > src/lib/database.types.ts && git diff --exit-code src/lib/database.types.ts
+
   deploy:
     if: github.ref == 'refs/heads/main'
-    needs: build
+    needs: [build, database]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
